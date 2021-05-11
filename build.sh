@@ -77,7 +77,7 @@ echo "$(uname -r)"
 if grep -q microsoft /proc/version; then
   echo "${CLR_BLD_CYA} Building over Microsoft WSL2 ${CLR_RST}"
 elif grep -q generic /proc/version; then
-  echo "${CLR_BLD_CYA}Building over native Linux${CLR_RST}"
+  echo "${CLR_BLD_CYA} Building over native Linux${CLR_RST}"
 else
   echo ""
 fi
