@@ -25,9 +25,53 @@ CLR_BLD_CYA=$CLR_RST$CLR_BLD$(tput setaf 6)     #  cyan, bold
 echo -e '\0033\0143'
 clear
 export Device=$1
+Outdir=$(readlink -f .)
 
+# Output usage help
+function showHelpAndExit() {
+  echo -e "${CLR_BLD_CYA}==================================================================${CLR_RST}"
+  echo -e "${CLR_BLD_BLU}usage: $0 <device> [options]${CLR_RST}"
+  echo -e ""
+  echo -e "${CLR_BLD_BLU}options:${CLR_RST}"
+  echo -e "${CLR_BLD_BLU}  -h, --help     display this help message${CLR_RST}"
+  echo -e "${CLR_BLD_BLU}  -c, --clean    wipe out before building${CLR_RST}"
+  echo -e "${CLR_BLD_CYA}==================================================================${CLR_RST}"
+  exit 1
+}
 echo -e "${CLR_BLD_CYA}Setting up the environment${CLR_RST}"
 echo -e "${CLR_BLD_CYA}==================================================================${CLR_RST}"
+
+if [ -z "$Device" ]; then
+  echo -e "${CLR_BLD_CYA}==================================================================${CLR_RST}"
+  echo -e "${CLR_BLD_RED}error: no device specified${CLR_RST}"
+  echo -e "${CLR_BLD_CYA}==================================================================${CLR_RST}"
+  showHelpAndExit
+fi
+
+case $Device in
+-h | --help | h | help)
+  showHelpAndExit
+  ;;
+esac
+
+#use the menu if u want to make clean build or nah
+while [[ "$#" > 0 ]]; do
+  PARAM=$(echo ${1,,})
+  case $PARAM in
+  -h | --help | h | help)
+    showHelpAndExit
+    ;;
+  -c | --clean | c | clean)
+    rm -rf $Outdir/out
+    ;;
+  *)
+    echo -e "${CLR_BLD_CYA}==================================================================${CLR_RST}"
+    echo -e "${CLR_BLD_YELLOW}warning: skipping unknown parameter: $1${CLR_RST}"
+    echo -e "${CLR_BLD_CYA}==================================================================${CLR_RST}"
+    ;;
+  esac
+  shift
+done
 
 echo "$(uname -r)"
 if grep -q microsoft /proc/version; then
@@ -47,27 +91,16 @@ else
 fi
 
 echo "${CLR_BLD_GRN} Cloning anykernel ${CLR_RST}"
+#change this to your anykernel url
 git clone --depth=1 https://github.com/Klozz/AnyKernel3 ~/tools/zip/$Device -b $Device
 
+#in this example i'll set miatoll
 if [ "${Device}" == "miatoll" ]; then
-  if [ "$FLAG_PREMIUM_BUILD" = 'y' ]; then
-    if [ "${FLAG_Q_BUILD}" = 'y' ]; then
-      export modelzip="Redmi-Note-9s-Pro-AOSP-Q-PREMIUM"
-    else
-      export modelzip="Redmi-Note-9s-Pro-AOSP-R-PREMIUM"
-    fi
-  elif [[ "${FLAG_R_BUILD}" = 'y' ]]; then
-    export modelzip="Redmi-Note-9s-Pro-AOSP-R"
-  elif [[ "${FLAG_Q_BUILD}" = 'y' ]]; then
-    export modelzip="Redmi-Note-9s-Pro-AOSP-Q"
-  else
-    export modelzip="Redmi-Note-9s-Pro-AOSP"
-  fi
+  export modelzip="Redmi-Note-9s-Pro-AOSP"
   export model="Redmi Note 9s/ PRO / PRO Max / Poco M2 Pro"
 fi
 
 #track some info...
-
 directorio=$(readlink -f .)
 ANYKERNEL=~/tools/zip/$Device
 Versionk=$(cat $directorio/Makefile | grep 'VERSION = ' | sed 's/.*= //' | head -1)
@@ -75,6 +108,7 @@ Patchlevel=$(cat $directorio/Makefile | grep 'PATCHLEVEL = ' | sed 's/.*= //')
 SubLevel=$(cat $directorio/Makefile | grep 'SUBLEVEL = ' | sed 's/.*= //')
 
 export KERNEL_GZ=$(pwd)/out/arch/arm64/boot/Image.gz-dtb
+#Prepared for yuki kernel you can change as u want
 ZIP_NAME=$Versionk.$Patchlevel.$SubLevel-Yuki-Kernel-$modelzip-$ZIP_DATE.zip
 
 echo -e "${CLR_BLD_CYA}==================================================================${CLR_RST}"
@@ -99,6 +133,7 @@ fi
 cd ~/tools/zip/$Device/
 zip -r $ZIP_NAME * -x "*.zip*"
 
+echo -e "${CLR_BLD_CYA}==================================================================${CLR_RST}"
 #only on WSL2
 if grep -q microsoft /proc/version; then
   echo "$(wslpath $(cmd.exe /C "echo %USERPROFILE%"))" >a.txt
@@ -108,4 +143,4 @@ if grep -q microsoft /proc/version; then
   echo "${CLR_BLD_GRN} Zip file copied to $WDesktop/Desktop ${CLR_RST}"
 
 fi
-
+echo -e "${CLR_BLD_CYA}==================================================================${CLR_RST}"
